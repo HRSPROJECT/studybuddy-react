@@ -78,7 +78,7 @@ export const processOutputText = (text: string): string => {
     } else {
       // It's a matrix
       let formattedMatrix = '<div class="math-matrix">';
-      rows.forEach(row => {
+      rows.forEach((row: string) => {
         formattedMatrix += `<div class="matrix-row">[${row}]</div>`;
       });
       formattedMatrix += '</div>';
@@ -121,6 +121,42 @@ export const isMobileDevice = (): boolean => {
           navigator.userAgent.match(/iPod/i) ||
           navigator.userAgent.match(/BlackBerry/i) ||
           navigator.userAgent.match(/Windows Phone/i)) !== null;
+};
+
+/**
+ * Process text content for PDF rendering, preserving mathematical notations and formatting
+ */
+export const processPdfText = (content: string): string => {
+  let text = content;
+  
+  // Remove HTML tags but preserve their content
+  // Keep subscripts and superscripts for math and chemistry
+  text = text.replace(/<sub>(.*?)<\/sub>/g, '_{$1}');
+  text = text.replace(/<sup>(.*?)<\/sup>/g, '^{$1}');
+  
+  // Replace math equation divs and spans
+  text = text.replace(/<div class="math-equation">(.*?)<\/div>/g, '$1');
+  text = text.replace(/<span class="math-equation">(.*?)<\/span>/g, '$1');
+  text = text.replace(/<span class="chemical-formula">(.*?)<\/span>/g, '$1');
+  
+  // Replace special symbols with Unicode equivalents for better PDF display
+  text = text.replace(/√/g, '√');
+  text = text.replace(/π/g, 'π');
+  text = text.replace(/θ/g, 'θ');
+  text = text.replace(/∑/g, '∑');
+  text = text.replace(/∫/g, '∫');
+  text = text.replace(/∞/g, '∞');
+  text = text.replace(/±/g, '±');
+  text = text.replace(/×/g, '×');
+  text = text.replace(/÷/g, '÷');
+  text = text.replace(/≤/g, '≤');
+  text = text.replace(/≥/g, '≥');
+  text = text.replace(/≠/g, '≠');
+  
+  // Remove remaining HTML tags
+  text = text.replace(/<[^>]+>/g, '');
+  
+  return text;
 };
 
 /**
@@ -176,11 +212,11 @@ export const downloadAnswerAsPdf = (type: 'ask' | 'explain', content: string): v
     doc.setFontSize(11);
     doc.setTextColor(31, 41, 55); // Text primary color
     
-    // Clean HTML content to plain text
-    const textContent = content.replace(/<[^>]+>/g, '');
+    // Process content to maintain mathematical formatting for PDF
+    const processedContent = processPdfText(content);
     
     // Split text into lines that fit within the page width
-    const contentLines = doc.splitTextToSize(textContent, textWidth);
+    const contentLines = doc.splitTextToSize(processedContent, textWidth);
     
     // Add text with line spacing
     doc.text(contentLines, margin, margin + 30);
