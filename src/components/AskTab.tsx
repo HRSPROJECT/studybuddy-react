@@ -7,13 +7,11 @@ import {
   Paper, 
   CircularProgress, 
   IconButton,
-  Divider,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Link,
-  Chip
+  Link
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import SendIcon from '@mui/icons-material/Send';
