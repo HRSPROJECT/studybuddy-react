@@ -15,7 +15,7 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-/* Special Formatting for Output Text */
+/* Special Formatting for Educational Content */
 .math-equation, .chemical-formula {
   font-family: 'Times New Roman', Times, serif;
   background-color: rgba(0, 0, 0, 0.05);
@@ -23,8 +23,58 @@ code {
   border-radius: 4px;
   display: inline-block;
   margin: 0 4px;
+  line-height: 1.5;
 }
 
+/* Display block equations in a more prominent way */
+div.math-equation {
+  display: block;
+  margin: 12px auto;
+  padding: 10px;
+  text-align: center;
+  max-width: 90%;
+  background-color: rgba(0, 0, 0, 0.04);
+  border-left: 3px solid rgba(79, 70, 229, 0.5);
+  font-size: 1.1em;
+}
+
+/* Chemical formulas with proper subscript/superscript spacing */
+.chemical-formula {
+  font-weight: 500;
+}
+
+.chemical-formula sub {
+  font-size: 0.75em;
+  position: relative;
+  bottom: -0.25em;
+  margin-left: -0.1em;
+}
+
+.chemical-formula sup {
+  font-size: 0.75em;
+  position: relative;
+  top: -0.5em;
+  margin-right: 0.1em;
+}
+
+/* Matrix and vector styling */
+.math-matrix {
+  display: block;
+  margin: 12px auto;
+  text-align: center;
+  font-family: 'Times New Roman', Times, serif;
+  background-color: rgba(0, 0, 0, 0.04);
+  padding: 8px;
+  border-radius: 4px;
+  max-width: 90%;
+  overflow-x: auto;
+}
+
+.matrix-row {
+  padding: 4px 0;
+}
+
+/* Code block styling */
 pre.code-block {
   background-color: #2d2d2d;
   color: #f8f8f2;
@@ -72,11 +122,20 @@ code.inline-code {
   font-size: 0.9em;
 }
 
-/* Dark mode support for code blocks and equations */
+/* Dark mode support for educational content */
 @media (prefers-color-scheme: dark) {
   .math-equation, .chemical-formula {
     background-color: rgba(255, 255, 255, 0.1);
     color: #f3f4f6;
+  }
+
+  div.math-equation {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-left: 3px solid rgba(99, 102, 241, 0.6);
+  }
+
+  .math-matrix {
+    background-color: rgba(255, 255, 255, 0.08);
   }
 
   code.inline-code {

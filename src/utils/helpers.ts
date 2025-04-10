@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 
 /**
- * Process text output to handle formatting (math equations, code blocks, etc.)
+ * Process text output to handle formatting (math equations, code blocks, scientific notations, etc.)
  */
 export const processOutputText = (text: string): string => {
   if (!text) return '';
@@ -12,25 +12,79 @@ export const processOutputText = (text: string): string => {
   // Italic
   text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
   
-  // Math equations
+  // Math equations - Enhanced processing
+  // Block equations (centered, larger)
   text = text.replace(/\$\$(.*?)\$\$/g, '<div class="math-equation">$1</div>');
+  
+  // Inline equations
   text = text.replace(/\$(.*?)\$/g, '<span class="math-equation">$1</span>');
   
-  // Chemical formulas
-  text = text.replace(/([A-Z][a-z]*)(\d*)/g, (match, element, subscript) => {
-    if (subscript) {
-      return `<span class="chemical-formula">${element}<sub>${subscript}</sub></span>`;
-    }
-    return `<span class="chemical-formula">${element}</span>`;
+  // Special math symbols that commonly appear in student questions
+  text = text.replace(/\\sqrt\{([^}]+)\}/g, '<span class="math-equation">√($1)</span>');
+  text = text.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '<span class="math-equation">$1/$2</span>');
+  text = text.replace(/([0-9]+)\^([0-9]+)/g, '<span class="math-equation">$1<sup>$2</sup></span>');
+  text = text.replace(/\\sum/g, '<span class="math-equation">∑</span>');
+  text = text.replace(/\\int/g, '<span class="math-equation">∫</span>');
+  text = text.replace(/\\infty/g, '<span class="math-equation">∞</span>');
+  text = text.replace(/\\pi/g, '<span class="math-equation">π</span>');
+  text = text.replace(/\\theta/g, '<span class="math-equation">θ</span>');
+  text = text.replace(/\\pm/g, '<span class="math-equation">±</span>');
+  text = text.replace(/\\times/g, '<span class="math-equation">×</span>');
+  text = text.replace(/\\div/g, '<span class="math-equation">÷</span>');
+  
+  // Square and cube roots with proper formatting
+  text = text.replace(/(\d+) square root/gi, '<span class="math-equation">√$1</span>');
+  text = text.replace(/square root of (\d+)/gi, '<span class="math-equation">√$1</span>');
+  text = text.replace(/cubic root of (\d+)/gi, '<span class="math-equation">∛$1</span>');
+  
+  // Handle "x squared", "x cubed" patterns that students often use
+  text = text.replace(/(\w+) squared/gi, '<span class="math-equation">$1<sup>2</sup></span>');
+  text = text.replace(/(\w+) cubed/gi, '<span class="math-equation">$1<sup>3</sup></span>');
+  
+  // Process modulus/absolute value
+  text = text.replace(/\|([^|]+)\|/g, '<span class="math-equation">|$1|</span>');
+  
+  // Chemical formulas with subscripts and superscripts
+  // Handle common chemical elements with their subscripts (e.g., H₂O, CO₂)
+  text = text.replace(/([A-Z][a-z]*)(\d+)/g, (match, element, subscript) => {
+    return `<span class="chemical-formula">${element}<sub>${subscript}</sub></span>`;
   });
   
-  // Code blocks
+  // Handle isotopes with superscripts (e.g., ¹⁴C, ²³⁵U)
+  text = text.replace(/(\^|\^{)(\d+)([A-Z][a-z]*)/g, (match, prefix, superscript, element) => {
+    return `<span class="chemical-formula"><sup>${superscript}</sup>${element}</span>`;
+  });
+  
+  // Code blocks with syntax highlighting hints
   text = text.replace(/```(\w*)([\s\S]*?)```/g, (match, language, code) => {
     return `<pre class="code-block${language ? ' language-'+language : ''}"><code>${code.trim()}</code></pre>`;
   });
   
-  // Inline code
+  // Inline code for variables, functions, etc.
   text = text.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+  
+  // Make mathematical expressions more readable by formatting special characters
+  // Examples: replacing <= with ≤, >= with ≥, != with ≠
+  text = text.replace(/(\s|^)&lt;=(\s|$)/g, ' ≤ ');
+  text = text.replace(/(\s|^)&gt;=(\s|$)/g, ' ≥ ');
+  text = text.replace(/(\s|^)!=(\s|$)/g, ' ≠ ');
+  
+  // Properly format matrices and vectors
+  text = text.replace(/\[\s*\[(.*?)\]\s*\]/g, (match, content) => {
+    const rows = content.split(/\],\s*\[/);
+    if (rows.length === 1) {
+      // It's a vector
+      return `<div class="math-equation">[${content}]</div>`;
+    } else {
+      // It's a matrix
+      let formattedMatrix = '<div class="math-matrix">';
+      rows.forEach(row => {
+        formattedMatrix += `<div class="matrix-row">[${row}]</div>`;
+      });
+      formattedMatrix += '</div>';
+      return formattedMatrix;
+    }
+  });
   
   // Convert line breaks to HTML
   text = text.replace(/\n/g, '<br>');
