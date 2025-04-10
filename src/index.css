@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Special Formatting for Output Text */
+.math-equation, .chemical-formula {
+  font-family: 'Times New Roman', Times, serif;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin: 0 4px;
+}
+
+pre.code-block {
+  background-color: #2d2d2d;
+  color: #f8f8f2;
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 12px 0;
+  position: relative;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+pre.code-block::before {
+  content: 'Code';
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  font-size: 0.8rem;
+  color: #8e8e8e;
+  text-transform: uppercase;
+}
+
+pre.code-block.language-javascript::before {
+  content: 'JavaScript';
+}
+
+pre.code-block.language-python::before {
+  content: 'Python';
+}
+
+pre.code-block.language-html::before {
+  content: 'HTML';
+}
+
+pre.code-block.language-css::before {
+  content: 'CSS';
+}
+
+code.inline-code {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+/* Dark mode support for code blocks and equations */
+@media (prefers-color-scheme: dark) {
+  .math-equation, .chemical-formula {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+  }
+
+  code.inline-code {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e5e7eb;
+  }
+}
