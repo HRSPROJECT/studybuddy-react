@@ -1,21 +1,21 @@
 {
   "files": {
-    "main.css": "/studybuddy-react/static/css/main.b52c7eab.css",
-    "main.js": "/studybuddy-react/static/js/main.b052b50e.js",
+    "main.css": "/studybuddy-react/static/css/main.50f65046.css",
+    "main.js": "/studybuddy-react/static/js/main.46391746.js",
     "static/js/239.dda29438.chunk.js": "/studybuddy-react/static/js/239.dda29438.chunk.js",
     "static/js/977.b99536c5.chunk.js": "/studybuddy-react/static/js/977.b99536c5.chunk.js",
     "static/js/732.3c5f9a72.chunk.js": "/studybuddy-react/static/js/732.3c5f9a72.chunk.js",
     "static/js/453.a45db4f3.chunk.js": "/studybuddy-react/static/js/453.a45db4f3.chunk.js",
     "index.html": "/studybuddy-react/index.html",
-    "main.b52c7eab.css.map": "/studybuddy-react/static/css/main.b52c7eab.css.map",
-    "main.b052b50e.js.map": "/studybuddy-react/static/js/main.b052b50e.js.map",
+    "main.50f65046.css.map": "/studybuddy-react/static/css/main.50f65046.css.map",
+    "main.46391746.js.map": "/studybuddy-react/static/js/main.46391746.js.map",
     "239.dda29438.chunk.js.map": "/studybuddy-react/static/js/239.dda29438.chunk.js.map",
     "977.b99536c5.chunk.js.map": "/studybuddy-react/static/js/977.b99536c5.chunk.js.map",
     "732.3c5f9a72.chunk.js.map": "/studybuddy-react/static/js/732.3c5f9a72.chunk.js.map",
     "453.a45db4f3.chunk.js.map": "/studybuddy-react/static/js/453.a45db4f3.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.b52c7eab.css",
-    "static/js/main.b052b50e.js"
+    "static/css/main.50f65046.css",
+    "static/js/main.46391746.js"
   ]
 }
