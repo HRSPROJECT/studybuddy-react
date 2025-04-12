@@ -38,24 +38,27 @@ interface Message {
 
 const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
   // State for the question input
-  const [question, setQuestion] = useState('');
-  const [followUpQuestion, setFollowUpQuestion] = useState('');
+  const [question, setQuestion] = useState<string>('');
+  const [followUpQuestion, setFollowUpQuestion] = useState<string>('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [sources, setSources] = useState<SearchResult[]>([]);
-  const [lastResponse, setLastResponse] = useState('');
+  const [lastResponse, setLastResponse] = useState<string>('');
   const [optimizedQuery, setOptimizedQuery] = useState<string | null>(null);
   const [originalQuery, setOriginalQuery] = useState<string | null>(null);
-  const [showFollowUp, setShowFollowUp] = useState(false);
+  const [showFollowUp, setShowFollowUp] = useState<boolean>(false);
   
   // Ref for file input
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Track conversation context for the Gemini API
   const [conversationContext, setConversationContext] = useState<ConversationMessage[]>([]);
+  
+  // Detect if we're on mobile
+  const isMobile = isMobileDevice();
   
   // Handle image upload
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,7 +137,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
     try {
       // Add user message to chat
       const userMessageId = generateId();
-      setMessages(prev => [...prev, {
+      setMessages((prev: Message[]) => [...prev, {
         id: userMessageId,
         type: 'user',
         content: question,
@@ -154,7 +157,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
       
       // Show system message if search failed
       if (webSearchData.message && webSearchResults.length === 0) {
-        setMessages(prev => [...prev, {
+        setMessages((prev: Message[]) => [...prev, {
           id: generateId(),
           type: 'system',
           content: 'Search results couldn\'t be retrieved. The answer may be less accurate.'
@@ -203,7 +206,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
       setConversationContext(updatedContext);
       
       // Add AI response to chat
-      setMessages(prev => [...prev, {
+      setMessages((prev: Message[]) => [...prev, {
         id: generateId(),
         type: 'ai',
         content: response.response
@@ -226,7 +229,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
       console.error('Error:', error);
       
       // Show error message in chat
-      setMessages(prev => [...prev, {
+      setMessages((prev: Message[]) => [...prev, {
         id: generateId(),
         type: 'system',
         content: 'Sorry, an error occurred. Please try again.'
@@ -250,7 +253,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
     try {
       // Add user follow-up to chat
       const userMessageId = generateId();
-      setMessages(prev => [...prev, {
+      setMessages((prev: Message[]) => [...prev, {
         id: userMessageId,
         type: 'user',
         content: followUpQuestion
@@ -286,7 +289,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
       setConversationContext(updatedContext);
       
       // Add AI response to chat
-      setMessages(prev => [...prev, {
+      setMessages((prev: Message[]) => [...prev, {
         id: generateId(),
         type: 'ai',
         content: response.response
@@ -305,7 +308,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
       console.error('Error:', error);
       
       // Show error message in chat
-      setMessages(prev => [...prev, {
+      setMessages((prev: Message[]) => [...prev, {
         id: generateId(),
         type: 'system',
         content: 'Sorry, an error occurred with your follow-up question. Please try again.'
@@ -356,9 +359,12 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
             />
           </Button>
           
-          <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
-            Press Ctrl + Enter to submit
-          </Typography>
+          {/* Only show keyboard shortcuts on desktop */}
+          {!isMobile && (
+            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+              Press Ctrl + Enter to submit
+            </Typography>
+          )}
         </Box>
         
         {imagePreview && (
@@ -475,7 +481,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
                   {/* Feedback buttons for AI responses */}
                   {message.type === 'ai' && (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, gap: 1 }}>
-                      {!isMobileDevice() && (
+                      {!isMobile && (
                         <>
                           <IconButton size="small" title="Helpful">
                             <ThumbUpAltIcon fontSize="small" />
@@ -499,7 +505,7 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
             </Box>
             
             {/* Download button - only show if we have responses and not on mobile */}
-            {messages.length > 0 && lastResponse && !isMobileDevice() && (
+            {messages.length > 0 && lastResponse && !isMobile && (
               <Box sx={{ textAlign: 'right', mb: 2 }}>
                 <Button
                   variant="contained"
@@ -569,9 +575,12 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
               Ask Follow-up
             </Button>
             
-            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
-              Press Ctrl + Enter to submit
-            </Typography>
+            {/* Only show keyboard shortcuts on desktop */}
+            {!isMobile && (
+              <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                Press Ctrl + Enter to submit
+              </Typography>
+            )}
           </Box>
         </Paper>
       )}

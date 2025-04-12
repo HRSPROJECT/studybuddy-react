@@ -32,18 +32,21 @@ interface ExplainTabProps {
 
 const ExplainTab: React.FC<ExplainTabProps> = ({ showNotification }) => {
   // State for the topic input
-  const [topic, setTopic] = useState('');
+  const [topic, setTopic] = useState<string>('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
-  const [explanation, setExplanation] = useState('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
+  const [explanation, setExplanation] = useState<string>('');
   const [sources, setSources] = useState<SearchResult[]>([]);
   const [optimizedQuery, setOptimizedQuery] = useState<string | null>(null);
   const [originalQuery, setOriginalQuery] = useState<string | null>(null);
   
   // Ref for file input
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Detect if we're on mobile
+  const isMobile = isMobileDevice();
   
   // Handle image upload
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,9 +203,12 @@ const ExplainTab: React.FC<ExplainTabProps> = ({ showNotification }) => {
             />
           </Button>
           
-          <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
-            Press Ctrl + Enter to submit
-          </Typography>
+          {/* Only show keyboard shortcuts on desktop */}
+          {!isMobile && (
+            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+              Press Ctrl + Enter to submit
+            </Typography>
+          )}
         </Box>
         
         {imagePreview && (
@@ -291,9 +297,9 @@ const ExplainTab: React.FC<ExplainTabProps> = ({ showNotification }) => {
                   >
                     <div dangerouslySetInnerHTML={{ __html: processOutputText(explanation) }} />
                     
-                    {/* Feedback buttons */}
+                    {/* Feedback buttons - only show thumbs up/down on desktop */}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
-                      {!isMobileDevice() && (
+                      {!isMobile && (
                         <>
                           <IconButton size="small" title="Helpful">
                             <ThumbUpAltIcon fontSize="small" />
@@ -314,7 +320,7 @@ const ExplainTab: React.FC<ExplainTabProps> = ({ showNotification }) => {
                   </Box>
                   
                   {/* Download button - only show if we have an explanation and not on mobile */}
-                  {explanation && !isMobileDevice() && (
+                  {explanation && !isMobile && (
                     <Box sx={{ textAlign: 'right', mt: 2 }}>
                       <Button
                         variant="contained"
