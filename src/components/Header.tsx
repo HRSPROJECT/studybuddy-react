@@ -1,15 +1,18 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Tabs, Tab, Box, useMediaQuery, useTheme } from '@mui/material';
+import { AppBar, Toolbar, Typography, Tabs, Tab, Box, Button, useMediaQuery, useTheme } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import SchoolIcon from '@mui/icons-material/School';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import BookIcon from '@mui/icons-material/Book';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 interface HeaderProps {
   currentTab: string;
   handleTabChange: (tab: string) => void;
+  isLoggedIn?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange }) => {
+const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange, isLoggedIn = false }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -28,7 +31,8 @@ const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange }) => {
           onChange={(_, value) => handleTabChange(value)}
           sx={{ 
             minHeight: '48px', 
-            marginLeft: isMobile ? 0 : 'auto',
+            marginLeft: isMobile ? 0 : '2rem',
+            marginRight: isMobile ? 0 : 'auto',
             width: isMobile ? '100%' : 'auto',
             '& .MuiTab-root': {
               minHeight: '48px',
@@ -55,6 +59,41 @@ const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange }) => {
             }
           />
         </Tabs>
+        
+        {/* Authentication Buttons */}
+        <Box sx={{ display: 'flex', mt: isMobile ? 1 : 0 }}>
+          {isLoggedIn ? (
+            <Button 
+              component={RouterLink} 
+              to="/profile" 
+              color="primary" 
+              startIcon={<AccountCircleIcon />}
+              sx={{ ml: 1 }}
+            >
+              Profile
+            </Button>
+          ) : (
+            <>
+              <Button 
+                component={RouterLink} 
+                to="/login" 
+                color="primary" 
+                variant="outlined"
+                sx={{ mr: 1 }}
+              >
+                Login
+              </Button>
+              <Button 
+                component={RouterLink} 
+                to="/register" 
+                color="primary" 
+                variant="contained"
+              >
+                Register
+              </Button>
+            </>
+          )}
+        </Box>
       </Toolbar>
     </AppBar>
   );

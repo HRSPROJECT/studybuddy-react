@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
-const Login: React.FC = () => {
+interface LoginProps {
+  showNotification: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void;
+}
+
+const Login: React.FC<LoginProps> = ({ showNotification }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { signInWithGoogle } = useAuth();
@@ -15,9 +19,14 @@ const Login: React.FC = () => {
       
       if (!success && error) {
         setError(error);
+        showNotification(error, 'error');
+      } else if (success) {
+        showNotification('Successfully logged in!', 'success');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during Google sign-in');
+      const errorMessage = err.message || 'An error occurred during Google sign-in';
+      setError(errorMessage);
+      showNotification(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }

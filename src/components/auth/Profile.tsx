@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { UserProfile } from '../../types/userTypes';
 
-const Profile: React.FC = () => {
+interface ProfileProps {
+  showNotification: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void;
+}
+
+const Profile: React.FC<ProfileProps> = ({ showNotification }) => {
   const { user, profile, updateProfile, logout } = useAuth();
   const [username, setUsername] = useState<string>('');
   const [bio, setBio] = useState<string>('');
@@ -31,6 +35,7 @@ const Profile: React.FC = () => {
     if (!username) {
       setError('Username is required');
       setIsLoading(false);
+      showNotification('Username is required', 'error');
       return;
     }
 
@@ -45,12 +50,16 @@ const Profile: React.FC = () => {
       
       if (success) {
         setIsSaved(true);
+        showNotification('Profile updated successfully!', 'success');
         setTimeout(() => setIsSaved(false), 3000);
       } else if (error) {
         setError(error);
+        showNotification(error, 'error');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred while updating your profile');
+      const errorMessage = err.message || 'An error occurred while updating your profile';
+      setError(errorMessage);
+      showNotification(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }

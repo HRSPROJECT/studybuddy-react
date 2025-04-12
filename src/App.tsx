@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, JSX } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Container, Box, AlertColor } from '@mui/material';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
 // Import components
 import Header from './components/Header';
@@ -8,6 +9,12 @@ import Footer from './components/Footer';
 import AskTab from './components/AskTab';
 import ExplainTab from './components/ExplainTab';
 import Notification from './components/Notification';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import Profile from './components/auth/Profile';
+
+// Import AuthProvider
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Create theme
 const theme = createTheme({
@@ -67,9 +74,25 @@ const theme = createTheme({
   },
 });
 
-function App() {
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
+};
+
+function AppContent() {
   // State for active tab
   const [currentTab, setCurrentTab] = useState<string>('ask');
+  const { user } = useAuth();
   
   // State for notification
   const [notification, setNotification] = useState<{
@@ -105,32 +128,59 @@ function App() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box 
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-        }}
-      >
-        <Header currentTab={currentTab} handleTabChange={handleTabChange} />
-        
-        <Container maxWidth="lg" component="main" sx={{ flexGrow: 1 }}>
-          {currentTab === 'ask' && <AskTab showNotification={showNotification} />}
-          {currentTab === 'explain' && <ExplainTab showNotification={showNotification} />}
-        </Container>
-        
-        <Footer />
-        
-        <Notification
-          open={notification.open}
-          message={notification.message}
-          severity={notification.severity}
-          onClose={handleCloseNotification}
-        />
-      </Box>
-    </ThemeProvider>
+    <Box 
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+      }}
+    >
+      <Header 
+        currentTab={currentTab} 
+        handleTabChange={handleTabChange} 
+        isLoggedIn={!!user}  // Pass authentication state to header
+      />
+      
+      <Container maxWidth="lg" component="main" sx={{ flexGrow: 1 }}>
+        <Routes>
+          <Route path="/" element={currentTab === 'ask' ? <AskTab showNotification={showNotification} /> : <ExplainTab showNotification={showNotification} />} />
+          
+          {/* Auth Routes */}
+          <Route path="/login" element={<Login showNotification={showNotification} />} />
+          <Route path="/register" element={<Register showNotification={showNotification} />} />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile showNotification={showNotification} />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </Container>
+      
+      <Footer />
+      
+      <Notification
+        open={notification.open}
+        message={notification.message}
+        severity={notification.severity}
+        onClose={handleCloseNotification}
+      />
+    </Box>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <AppContent />
+        </ThemeProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

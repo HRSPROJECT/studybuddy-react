@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const Register: React.FC = () => {
+interface RegisterProps {
+  showNotification: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void;
+}
+
+const Register: React.FC<RegisterProps> = ({ showNotification }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { signInWithGoogle } = useAuth();
@@ -11,7 +15,8 @@ const Register: React.FC = () => {
   // Redirect to login page since we're only using Google sign-in
   useEffect(() => {
     navigate('/login');
-  }, [navigate]);
+    showNotification('Redirecting to login page', 'info');
+  }, [navigate, showNotification]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -22,9 +27,12 @@ const Register: React.FC = () => {
       
       if (!success && error) {
         setError(error);
+        showNotification(error, 'error');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during Google sign-in');
+      const errorMessage = err.message || 'An error occurred during Google sign-in';
+      setError(errorMessage);
+      showNotification(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
