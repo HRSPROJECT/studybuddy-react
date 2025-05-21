@@ -65,18 +65,36 @@ const apiService = {
       const response = await axios.post(`${API_BASE_URL}/websearch`, {
         query,
         image,
-        useOptimizedSearch: true
+        useOptimizedSearch: true // Assuming this is a feature flag for the backend
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Origin': 'https://hrsproject.github.io'
+          'Origin': 'https://hrsproject.github.io' // Adjust if worker origin policy changes
         }
       });
       
+      // The backend might return a message even on success (e.g., partial results)
+      // Or, if the backend itself signals an error in the response body for non-2xx status.
+      if (response.data && response.data.message && response.status !== 200) {
+         // This case might be redundant if Axios throws for non-2xx.
+         // However, if the backend returns 200 OK but with an error message in the body.
+        console.error('Web search failed with message:', response.data.message);
+        throw new Error(`Web search failed: ${response.data.message}`);
+      }
       return response.data;
-    } catch (error) {
+
+    } catch (error: any) {
       console.error('Web search error:', error);
-      return { results: [], message: "Failed to perform web search" };
+      let errorMessage = "Failed to perform web search. Please check your connection or try again later.";
+      if (axios.isAxiosError(error) && error.response) {
+        // Backend responded with an error status
+        errorMessage = `Web search failed: ${error.response.data?.message || error.message}`;
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = "Web search service is currently unavailable. Please try again later.";
+      }
+      // For other errors, the generic message is used.
+      throw new Error(errorMessage);
     }
   },
   
@@ -84,22 +102,32 @@ const apiService = {
   askQuestion: async (request: AskRequest): Promise<AskResponse> => {
     try {
       const response = await axios.post(`${API_BASE_URL}/gemini`, {
-        prompt: request.prompt,
-        image: request.image,
-        webSearchResults: request.webSearchResults,
-        conversationContext: request.conversationContext,
-        optimizedQuery: request.optimizedQuery
+        ...request // Spread the request object
       }, {
         headers: {
           'Content-Type': 'application/json',
           'Origin': 'https://hrsproject.github.io'
         }
       });
-      
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ask question error:', error);
-      throw new Error('Failed to get answer');
+      let errorMessage = "Failed to get an answer from the AI. Please try again.";
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage = `AI service error: ${error.response.data?.error || error.response.data?.message || error.message}`;
+        if (error.response.status === 429) { // Too Many Requests
+            errorMessage = "Rate limit exceeded. Please wait a moment and try again.";
+        } else if (error.response.status === 500) {
+            errorMessage = "The AI service encountered an internal error. Please try again later.";
+        }
+        // Check for specific Gemini error structures if backend proxies them
+        if (error.response.data?.promptFeedback?.blockReason) {
+            errorMessage = `Your request was blocked due to: ${error.response.data.promptFeedback.blockReason}. Please rephrase your query.`;
+        }
+      } else if (error.request) {
+        errorMessage = "AI service is currently unavailable. Please try again later.";
+      }
+      throw new Error(errorMessage);
     }
   },
   
@@ -107,21 +135,31 @@ const apiService = {
   getExplanation: async (request: ExplainRequest): Promise<ExplainResponse> => {
     try {
       const response = await axios.post(`${API_BASE_URL}/explain`, {
-        topic: request.topic,
-        image: request.image,
-        webSearchResults: request.webSearchResults,
-        optimizedQuery: request.optimizedQuery
+        ...request // Spread the request object
       }, {
         headers: {
           'Content-Type': 'application/json',
           'Origin': 'https://hrsproject.github.io'
         }
       });
-      
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Get explanation error:', error);
-      throw new Error('Failed to get explanation');
+      let errorMessage = "Failed to get an explanation from the AI. Please try again.";
+       if (axios.isAxiosError(error) && error.response) {
+        errorMessage = `AI service error: ${error.response.data?.error || error.response.data?.message || error.message}`;
+         if (error.response.status === 429) {
+            errorMessage = "Rate limit exceeded. Please wait a moment and try again.";
+        } else if (error.response.status === 500) {
+            errorMessage = "The AI service encountered an internal error. Please try again later.";
+        }
+        if (error.response.data?.promptFeedback?.blockReason) {
+            errorMessage = `Your request was blocked due to: ${error.response.data.promptFeedback.blockReason}. Please rephrase your query.`;
+        }
+      } else if (error.request) {
+        errorMessage = "AI service is currently unavailable. Please try again later.";
+      }
+      throw new Error(errorMessage);
     }
   }
 };

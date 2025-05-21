@@ -29,22 +29,29 @@ const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange, isLoggedIn
         <Tabs 
           value={currentTab}
           onChange={(_, value) => handleTabChange(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile // Ensures scroll buttons are visible on mobile if needed
           sx={{ 
             minHeight: '48px', 
             marginLeft: isMobile ? 0 : '2rem',
             marginRight: isMobile ? 0 : 'auto',
-            width: isMobile ? '100%' : 'auto',
+            width: isMobile ? '100%' : 'auto', // Takes full width on mobile to allow scrolling
+            '& .MuiTabs-indicator': {
+            },
             '& .MuiTab-root': {
               minHeight: '48px',
               textTransform: 'none',
+              // Ensure tabs don't shrink too much, allowing scroll behavior to trigger
+              minWidth: isMobile? 'auto' : '90px', // Adjust minWidth as needed for mobile vs desktop
             }
           }}
         >
           <Tab 
             value="ask" 
             label={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <QuestionAnswerIcon sx={{ mr: 1 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', px: isMobile ? 1 : 2 }}> 
+                <QuestionAnswerIcon sx={{ mr: 0.5 }} fontSize={isMobile? "small" : "medium"}/>
                 <span>Ask</span>
               </Box>
             } 
@@ -52,8 +59,8 @@ const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange, isLoggedIn
           <Tab 
             value="explain" 
             label={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <BookIcon sx={{ mr: 1 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', px: isMobile ? 1 : 2 }}> 
+                <BookIcon sx={{ mr: 0.5 }} fontSize={isMobile? "small" : "medium"}/>
                 <span>Explain</span>
               </Box>
             }
@@ -61,14 +68,14 @@ const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange, isLoggedIn
         </Tabs>
         
         {/* Authentication Buttons */}
-        <Box sx={{ display: 'flex', mt: isMobile ? 1 : 0 }}>
+        <Box sx={{ display: 'flex', mt: isMobile ? 1 : 0, ml: isMobile ? 0 : 1 }}> {/* Ensure spacing for auth buttons */}
           {isLoggedIn ? (
             <Button 
               component={RouterLink} 
               to="/profile" 
               color="primary" 
               startIcon={<AccountCircleIcon />}
-              sx={{ ml: 1 }}
+              sx={{ textTransform: 'none', fontSize: isMobile ? '0.8rem' : '0.9rem' }}
             >
               Profile
             </Button>
@@ -79,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange, isLoggedIn
                 to="/login" 
                 color="primary" 
                 variant="outlined"
-                sx={{ mr: 1 }}
+                sx={{ mr: 1, textTransform: 'none', fontSize: isMobile ? '0.8rem' : '0.9rem', padding: isMobile ? '4px 8px' : '6px 16px' }}
               >
                 Login
               </Button>
@@ -88,6 +95,7 @@ const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange, isLoggedIn
                 to="/register" 
                 color="primary" 
                 variant="contained"
+                sx={{ textTransform: 'none', fontSize: isMobile ? '0.8rem' : '0.9rem', padding: isMobile ? '4px 8px' : '6px 16px' }}
               >
                 Register
               </Button>

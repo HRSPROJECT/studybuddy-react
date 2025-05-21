@@ -2,169 +2,170 @@ import React, { useState, useRef, KeyboardEvent } from 'react';
 import { 
   Box, 
   Typography, 
-  TextField, 
-  Button, 
+  Button, // TextField removed
   Paper, 
   CircularProgress, 
-  IconButton,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Link
+  TextField, // Keep TextField for Follow-up section
+  // IconButton, List, ListItem, ListItemIcon, ListItemText, Link removed as ResultsDisplay will handle this
 } from '@mui/material';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import SendIcon from '@mui/icons-material/Send';
-import LinkIcon from '@mui/icons-material/Link';
-import InfoIcon from '@mui/icons-material/Info';
-import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
-import ThumbDownAltIcon from '@mui/icons-material/ThumbDownAlt';
-import FileCopyIcon from '@mui/icons-material/FileCopy';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+// FileUploadIcon, LinkIcon, InfoIcon, ThumbUpAltIcon, ThumbDownAltIcon, FileCopyIcon, PictureAsPdfIcon removed
+// They will be used by InputSection or ResultsDisplay internally
 
+import SendIcon from '@mui/icons-material/Send'; // Keep for the main submit button and follow-up
 import apiService, { SearchResult, ConversationMessage } from '../services/apiService';
-import { getImageBase64, processOutputText, downloadAnswerAsPdf, isMobileDevice } from '../utils/helpers';
+// processOutputText will be used by ResultsDisplay, getImageBase64 and downloadAnswerAsPdf might be adapted or kept
+import { getImageBase64, downloadAnswerAsPdf, isMobileDevice } from '../utils/helpers'; 
+import InputSection from './InputSection'; // Import InputSection
+import ResultsDisplay from './ResultsDisplay'; // Import ResultsDisplay
+import { Message as ChatMessage } from '../types/chatTypes'; // Import unified Message type
 
 interface AskTabProps {
   showNotification: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void;
 }
 
-interface Message {
-  id: string;
-  type: 'user' | 'ai' | 'system';
-  content: string;
-  image?: string;
-}
+// Local Message interface is removed, ChatMessage from chatTypes will be used.
 
 const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
-  // State for the question input
-  const [question, setQuestion] = useState<string>('');
-  const [followUpQuestion, setFollowUpQuestion] = useState<string>('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [question, setQuestion] = useState<string>(''); // For InputSection
+  const [followUpQuestion, setFollowUpQuestion] = useState<string>(''); // For the follow-up TextField
+  const [imageFile, setImageFile] = useState<File | null>(null); // Managed via InputSection
+  const [imagePreview, setImagePreview] = useState<string | null>(null); // For InputSection's preview
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = useState<string>('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]); // Use ChatMessage type
   const [sources, setSources] = useState<SearchResult[]>([]);
-  const [lastResponse, setLastResponse] = useState<string>('');
+  const [lastResponse, setLastResponse] = useState<string>(''); // Still useful for overall last AI text for some functions
   const [optimizedQuery, setOptimizedQuery] = useState<string | null>(null);
   const [originalQuery, setOriginalQuery] = useState<string | null>(null);
   const [showFollowUp, setShowFollowUp] = useState<boolean>(false);
   
-  // Ref for file input
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null); // Ref for scrolling to last message
+  const followUpInputRef = useRef<HTMLInputElement>(null); // Ref for focusing follow-up input
   
-  // Track conversation context for the Gemini API
   const [conversationContext, setConversationContext] = useState<ConversationMessage[]>([]);
-  
-  // Detect if we're on mobile
   const isMobile = isMobileDevice();
-  
-  // Handle image upload
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    
-    setImageFile(file);
-    
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(scrollToBottom, [messages]); // Scroll when messages change
+
+  useEffect(() => {
+    if (showFollowUp && !isLoading && followUpInputRef.current) {
+      // Add a small delay to ensure the input is rendered and visible before focusing
+      setTimeout(() => {
+        followUpInputRef.current?.focus();
+      }, 100);
+    }
+  }, [showFollowUp, isLoading]);
+
+
+  // Updated handleImageUpload for InputSection: InputSection calls this with the File object
+  const handleImageUploadInternal = (uploadedFile: File) => {
+    if (!uploadedFile) return;
+    setImageFile(uploadedFile);
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
-      setImagePreview(result);
+      setImagePreview(result); 
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(uploadedFile);
   };
   
-  // Clear image upload
-  const clearImage = () => {
+  const clearImageInternal = () => {
     setImageFile(null);
     setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
   
-  // Handle keyboard shortcut (Ctrl+Enter)
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+  // handleKeyDown for InputSection's text field and the separate follow-up TextField
+  const handleKeyDownInternal = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.ctrlKey && e.key === 'Enter') {
+      e.preventDefault(); 
       if (showFollowUp) {
-        if (followUpQuestion.trim()) handleFollowUpSubmit();
+        if (followUpQuestion.trim() && !isLoading) handleFollowUpSubmit();
       } else {
-        if (question.trim()) handleSubmit();
+        if ((question.trim() || imageFile) && !isLoading) handleSubmit();
       }
     }
   };
   
-  // Handle clipboard copy
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        showNotification('Response copied to clipboard!', 'success');
-      })
-      .catch(err => {
-        console.error('Could not copy text: ', err);
-        showNotification('Failed to copy to clipboard', 'error');
-      });
-  };
-  
-  // Handle downloading as PDF
-  const handleDownloadPdf = () => {
-    try {
-      downloadAnswerAsPdf('ask', lastResponse);
-      showNotification('PDF downloaded successfully!', 'success');
-    } catch (error) {
-      showNotification('Failed to download PDF', 'error');
+  // handleCopyToClipboard is passed to ResultsDisplay
+  const handleCopyToClipboardInternal = (textToCopy: string) => {
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => showNotification('Copied to clipboard!', 'success'))
+        .catch(err => {
+          console.error('Failed to copy:', err);
+          showNotification('Failed to copy to clipboard.', 'error');
+        });
+    } else {
+      showNotification('No content to copy.', 'info');
     }
   };
   
-  // Generate a unique ID for messages
+  // handleDownloadPdfInternal is passed to ResultsDisplay
+  const handleDownloadPdfInternal = () => {
+    const aiMessagesContent = messages
+        .filter(msg => msg.type === 'ai')
+        .map(msg => msg.text) 
+        .join("\n\n---\n\n");
+
+    if (!aiMessagesContent) {
+      showNotification('No AI response content to download.', 'warning');
+      return;
+    }
+    try {
+      downloadAnswerAsPdf('ask', aiMessagesContent, sources, originalQuery || question, optimizedQuery);
+      showNotification('PDF downloaded successfully!', 'success');
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      showNotification('Failed to download PDF.', 'error');
+    }
+  };
+  
   const generateId = () => `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  // Handle question submission
   const handleSubmit = async () => {
-    if (!question.trim()) {
-      showNotification('Please enter your question first', 'warning');
+    if (!question.trim() && !imageFile) { 
+      showNotification('Please enter a question or upload an image.', 'warning');
       return;
     }
     
     setIsLoading(true);
     setLoadingMessage('Analyzing your question...');
-    
-    // Reset optimization notice
     setOptimizedQuery(null);
     setOriginalQuery(null);
     
     try {
-      // Add user message to chat
       const userMessageId = generateId();
-      setMessages((prev: Message[]) => [...prev, {
+      const userMessage: ChatMessage = {
         id: userMessageId,
         type: 'user',
-        content: question,
-        image: imagePreview || undefined
-      }]);
+        text: question, 
+        imagePreview: imagePreview, 
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
       
-      // Get image as base64 if available
       let imageBase64: string | null = null;
-      if (imageFile) {
-        setLoadingMessage(imageFile ? 'Analyzing image and question...' : 'Searching for information...');
-        imageBase64 = await getImageBase64(imageFile);
+      if (imageFile && imagePreview) { 
+        setLoadingMessage('Analyzing image and question...');
+        imageBase64 = imagePreview.split(',')[1]; 
+      } else if (imageFile) { 
+        setLoadingMessage('Processing image...');
+        imageBase64 = await getImageBase64(imageFile); 
       }
       
-      // Perform web search
       const webSearchData = await apiService.performWebSearch(question, imageBase64 || undefined);
       const webSearchResults = webSearchData.results;
       
-      // Show system message if search failed
       if (webSearchData.message && webSearchResults.length === 0) {
-        setMessages((prev: Message[]) => [...prev, {
-          id: generateId(),
-          type: 'system',
-          content: 'Search results couldn\'t be retrieved. The answer may be less accurate.'
+        setMessages((prev) => [...prev, {
+          id: generateId(), type: 'system', text: 'Search results couldn\'t be retrieved. The answer may be less accurate.', timestamp: new Date().toISOString()
         }]);
       }
       
-      // Save optimization info if available
       if (webSearchData.isOptimized && webSearchData.optimizedQuery) {
         setOptimizedQuery(webSearchData.optimizedQuery);
         setOriginalQuery(webSearchData.originalQuery || question);
@@ -172,405 +173,184 @@ const AskTab: React.FC<AskTabProps> = ({ showNotification }) => {
       
       setLoadingMessage('Generating answer...');
       
-      // Add to conversation context
-      const userContextMessage: ConversationMessage = {
-        role: 'user',
-        content: question
-      };
-      
-      if (imageBase64) {
-        userContextMessage.image = {
-          data: imageBase64
-        };
-      }
-      
+      const userContextMessage: ConversationMessage = { role: 'user', content: question };
+      if (imageBase64) userContextMessage.image = { data: imageBase64 };
       const newContext = [...conversationContext, userContextMessage];
       setConversationContext(newContext);
       
-      // Get answer from API
       const response = await apiService.askQuestion({
         prompt: question,
-        image: imageBase64 || undefined,
+        image: imageBase64 || undefined, 
         webSearchResults,
         conversationContext: newContext,
         optimizedQuery: webSearchData.optimizedQuery
       });
       
-      // Add AI response to conversation context
-      const modelResponse: ConversationMessage = {
-        role: 'model',
-        content: response.response
-      };
-      
+      const modelResponse: ConversationMessage = { role: 'model', content: response.response };
       const updatedContext = [...newContext, modelResponse];
       setConversationContext(updatedContext);
       
-      // Add AI response to chat
-      setMessages((prev: Message[]) => [...prev, {
-        id: generateId(),
-        type: 'ai',
-        content: response.response
+      setMessages((prev) => [...prev, {
+        id: generateId(), type: 'ai', text: response.response, timestamp: new Date().toISOString(), showFeedback: true 
       }]);
       
-      // Save response for download
-      setLastResponse(response.response);
-      
-      // Update sources
+      setLastResponse(response.response); 
       setSources(response.sources || []);
-      
-      // Reset inputs
-      setQuestion('');
-      clearImage();
-      
-      // Show follow-up section
+      setQuestion(''); 
+      clearImageInternal(); 
       setShowFollowUp(true);
       
-    } catch (error) {
-      console.error('Error:', error);
-      
-      // Show error message in chat
-      setMessages((prev: Message[]) => [...prev, {
-        id: generateId(),
-        type: 'system',
-        content: 'Sorry, an error occurred. Please try again.'
-      }]);
-      
+    } catch (error: any) {
+      console.error('Error in handleSubmit:', error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during submission. Please try again.";
+      showNotification(errorMessage, 'error');
     } finally {
       setIsLoading(false);
+      setLoadingMessage('');
     }
   };
   
-  // Handle follow-up question submission
   const handleFollowUpSubmit = async () => {
     if (!followUpQuestion.trim()) {
-      showNotification('Please enter your follow-up question', 'warning');
+      showNotification('Please enter your follow-up question.', 'warning');
       return;
     }
-    
     setIsLoading(true);
     setLoadingMessage('Processing follow-up question...');
-    
     try {
-      // Add user follow-up to chat
       const userMessageId = generateId();
-      setMessages((prev: Message[]) => [...prev, {
-        id: userMessageId,
-        type: 'user',
-        content: followUpQuestion
+      setMessages((prev) => [...prev, {
+        id: userMessageId, type: 'user', text: followUpQuestion, timestamp: new Date().toISOString()
       }]);
       
-      // Add to conversation context
-      const userFollowUp: ConversationMessage = {
-        role: 'user',
-        content: followUpQuestion
-      };
-      
+      const userFollowUp: ConversationMessage = { role: 'user', content: followUpQuestion };
       const newContext = [...conversationContext, userFollowUp];
       setConversationContext(newContext);
       
-      // Perform web search for the follow-up
       const webSearchData = await apiService.performWebSearch(followUpQuestion);
       const webSearchResults = webSearchData.results;
       
-      // Get answer from API
       const response = await apiService.askQuestion({
         prompt: followUpQuestion,
         webSearchResults,
         conversationContext: newContext
       });
       
-      // Add AI response to conversation context
-      const modelResponse: ConversationMessage = {
-        role: 'model',
-        content: response.response
-      };
-      
+      const modelResponse: ConversationMessage = { role: 'model', content: response.response };
       const updatedContext = [...newContext, modelResponse];
       setConversationContext(updatedContext);
       
-      // Add AI response to chat
-      setMessages((prev: Message[]) => [...prev, {
-        id: generateId(),
-        type: 'ai',
-        content: response.response
+      setMessages((prev) => [...prev, {
+        id: generateId(), type: 'ai', text: response.response, timestamp: new Date().toISOString(), showFeedback: true
       }]);
       
-      // Save response for download
-      setLastResponse(response.response);
+      setLastResponse(response.response); 
+      setSources(response.sources || []); 
+      setFollowUpQuestion(''); 
       
-      // Update sources
-      setSources(response.sources || []);
-      
-      // Reset follow-up input
-      setFollowUpQuestion('');
-      
-    } catch (error) {
-      console.error('Error:', error);
-      
-      // Show error message in chat
-      setMessages((prev: Message[]) => [...prev, {
-        id: generateId(),
-        type: 'system',
-        content: 'Sorry, an error occurred with your follow-up question. Please try again.'
-      }]);
-      
+    } catch (error: any) {
+      console.error('Error in handleFollowUpSubmit:', error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred with the follow-up. Please try again.";
+      showNotification(errorMessage, 'error');
     } finally {
       setIsLoading(false);
+      setLoadingMessage('');
     }
   };
 
+  const handleMessageFeedbackInternal = (messageId: string, feedback: 'good' | 'bad') => {
+    console.log(`Feedback for message ${messageId}: ${feedback}. This needs backend integration.`);
+    showNotification(`Feedback (${feedback}) recorded for message ${messageId}. (Display only)`, 'info');
+    setMessages(prevMessages => prevMessages.map(msg =>
+      msg.id === messageId ? { ...msg, showFeedback: false } : msg
+    ));
+  };
+
   return (
-    <Box sx={{ py: 3 }}>
+    <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', height: { xs: 'auto', md: 'calc(100vh - 100px)' }, maxHeight: 'calc(100vh - 100px)' }}>
+      
       <Paper 
-        elevation={1} 
-        sx={{ p: 3, mb: 3 }}
+        elevation={2} 
+        sx={{ p: { xs: 1.5, md: 2 }, mb: 2, borderRadius: 2 }} 
       >
-        <Typography variant="h5" component="h2" gutterBottom>
+        <Typography variant="h5" component="h2" gutterBottom sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
           Ask a Question
         </Typography>
         
-        <TextField
-          fullWidth
-          multiline
-          minRows={3}
-          maxRows={6}
+        <InputSection
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="What would you like to ask? Be specific for better results."
-          onKeyDown={handleKeyDown}
-          disabled={isLoading}
-          sx={{ mb: 2 }}
+          onImageUpload={handleImageUploadInternal}
+          onClearImage={clearImageInternal}
+          imagePreview={imagePreview}
+          isLoading={isLoading}
+          onKeyDown={handleKeyDownInternal} 
+          placeholder="Type your question or describe an image..."
+          showKeyboardShortcutHint={!isMobile}
         />
         
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-          <Button
-            variant="outlined"
-            component="label"
-            startIcon={<FileUploadIcon />}
-            disabled={isLoading}
-          >
-            Upload Image
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={handleImageUpload}
-              ref={fileInputRef}
-            />
-          </Button>
-          
-          {/* Only show keyboard shortcuts on desktop */}
-          {!isMobile && (
-            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
-              Press Ctrl + Enter to submit
-            </Typography>
-          )}
-        </Box>
-        
-        {imagePreview && (
-          <Box sx={{ mb: 2 }}>
-            <Box 
-              component="img" 
-              src={imagePreview} 
-              alt="Preview" 
-              sx={{ 
-                maxWidth: '100%', 
-                maxHeight: 200, 
-                objectFit: 'contain',
-                borderRadius: 1
-              }} 
-            />
-            <Button 
-              size="small" 
-              onClick={clearImage} 
-              sx={{ mt: 1 }}
-            >
-              Clear Image
-            </Button>
-          </Box>
-        )}
-        
         <Button
+          fullWidth
           variant="contained"
-          endIcon={<SendIcon />}
+          color="primary"
+          endIcon={isLoading && messages.length === 0 ? <CircularProgress size={20} color="inherit" /> : <SendIcon />} 
           onClick={handleSubmit}
-          disabled={isLoading || !question.trim()}
+          disabled={isLoading || (!question.trim() && !imageFile)}
+          sx={{ mt: 2, py: { xs: 1, md: 1.5 }, fontSize: { xs: '0.875rem', md: '1rem' }, borderRadius: '8px' }}
         >
           Get Answer
         </Button>
       </Paper>
       
-      {/* Results Container */}
-      <Paper elevation={1} sx={{ p: 3, mb: 3, minHeight: 200 }}>
-        {/* Loading Indicator */}
-        {isLoading ? (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={3}>
-            <CircularProgress size={40} sx={{ mb: 2 }} />
+      <Paper elevation={1} sx={{ p: { xs: 1.5, md: 2 }, flexGrow: 1, overflowY: 'auto', borderRadius: 2, minHeight: { xs: 300, md: 'auto'} }}>
+        <ResultsDisplay
+          isLoading={isLoading && messages.length === 0} 
+          loadingMessage={loadingMessage}
+          optimizedQuery={optimizedQuery}
+          originalQuery={originalQuery}
+          messages={messages}
+          sources={sources}
+          onCopy={handleCopyToClipboardInternal}
+          onDownloadPdf={handleDownloadPdfInternal}
+          isMobile={isMobile}
+          showPdfDownloadButton={messages.some(m => m.type === 'ai') && !isMobile} 
+          showFeedbackButtons={true} 
+          onMessageFeedback={handleMessageFeedbackInternal}
+          scrollTargetRef={messagesEndRef} // Pass the ref here
+        />
+        {isLoading && messages.length > 0 && (
+          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={2}>
+            <CircularProgress size={24} sx={{ mb: 1 }} />
             <Typography variant="body2" color="text.secondary">
-              {loadingMessage}
+              {loadingMessage || "Generating response..."}
             </Typography>
           </Box>
-        ) : (
-          <>
-            {/* Optimization Notice */}
-            {optimizedQuery && (
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'flex-start', 
-                  bgcolor: 'action.hover', 
-                  borderRadius: 1, 
-                  p: 1, 
-                  mb: 2 
-                }}
-              >
-                <InfoIcon color="primary" sx={{ mr: 1, mt: 0.5 }} fontSize="small" />
-                <Typography variant="body2">
-                  Query optimized: "<strong>{originalQuery}</strong>" → "<strong>{optimizedQuery}</strong>"
-                </Typography>
-              </Box>
-            )}
-            
-            {/* Chat Messages */}
-            <Box sx={{ mb: 2 }}>
-              {messages.map((message) => (
-                <Box 
-                  key={message.id} 
-                  sx={{
-                    mb: 2,
-                    p: 2,
-                    borderRadius: 2,
-                    maxWidth: message.type === 'user' ? '85%' : '100%',
-                    ml: message.type === 'user' ? 'auto' : 0,
-                    bgcolor: message.type === 'user'
-                      ? 'primary.light'
-                      : message.type === 'system'
-                        ? 'warning.light'
-                        : 'grey.100',
-                    color: message.type === 'user' ? 'white' : 'text.primary',
-                    borderRight: message.type === 'user' ? 4 : 0,
-                    borderLeft: message.type === 'ai' ? 4 : message.type === 'system' ? 4 : 0,
-                    borderColor: message.type === 'user'
-                      ? 'primary.main'
-                      : message.type === 'system'
-                        ? 'warning.main'
-                        : 'primary.main',
-                    position: 'relative',
-                    textAlign: message.type === 'user' ? 'right' : 'left',
-                  }}
-                >
-                  {/* Message content */}
-                  <div dangerouslySetInnerHTML={{ __html: processOutputText(message.content) }} />
-                  
-                  {/* Image if present */}
-                  {message.image && (
-                    <Box
-                      component="img"
-                      src={message.image}
-                      alt="Attached"
-                      sx={{
-                        maxWidth: '100%',
-                        maxHeight: 150,
-                        objectFit: 'contain',
-                        borderRadius: 1,
-                        mt: 1
-                      }}
-                    />
-                  )}
-                  
-                  {/* Feedback buttons for AI responses */}
-                  {message.type === 'ai' && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, gap: 1 }}>
-                      {!isMobile && (
-                        <>
-                          <IconButton size="small" title="Helpful">
-                            <ThumbUpAltIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" title="Not Helpful">
-                            <ThumbDownAltIcon fontSize="small" />
-                          </IconButton>
-                        </>
-                      )}
-                      <IconButton 
-                        size="small" 
-                        title="Copy response"
-                        onClick={() => handleCopy(message.content)}
-                      >
-                        <FileCopyIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  )}
-                </Box>
-              ))}
-            </Box>
-            
-            {/* Download button - only show if we have responses and not on mobile */}
-            {messages.length > 0 && lastResponse && !isMobile && (
-              <Box sx={{ textAlign: 'right', mb: 2 }}>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  startIcon={<PictureAsPdfIcon />}
-                  onClick={handleDownloadPdf}
-                >
-                  Download as PDF
-                </Button>
-              </Box>
-            )}
-            
-            {/* Sources */}
-            {sources.length > 0 && (
-              <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                  <LinkIcon sx={{ mr: 1 }} fontSize="small" /> Sources
-                </Typography>
-                <List dense>
-                  {sources.map((source, index) => (
-                    <ListItem key={index} disablePadding sx={{ py: 0.5 }}>
-                      <ListItemIcon sx={{ minWidth: 36 }}>
-                        <LinkIcon fontSize="small" color="primary" />
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={
-                          <Link 
-                            href={source.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            underline="hover"
-                          >
-                            {source.title}
-                          </Link>
-                        } 
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            )}
-          </>
         )}
       </Paper>
       
-      {/* Follow-up section */}
+      {/* Follow-up section - Appears below results when active */}
       {showFollowUp && !isLoading && (
-        <Paper elevation={1} sx={{ p: 3 }}>
+        <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, mt: 2, borderRadius: 2 }}>
           <TextField
             fullWidth
             placeholder="Ask a follow-up question..."
             value={followUpQuestion}
             onChange={(e) => setFollowUpQuestion(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleKeyDownInternal} // Ensure correct handler is used
             size="small"
-            sx={{ mb: 2 }}
+            disabled={isLoading} // Disable if parent is loading, though this section hides on parent isLoading
+            sx={{ mb: 2, borderRadius: '6px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
           />
           
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', flexDirection: {xs: 'column', sm: 'row'}, justifyContent: 'space-between', alignItems: 'center', gap: {xs: 1, sm: 2} }}>
             <Button
               variant="contained"
               color="primary"
-              endIcon={<SendIcon />}
+              endIcon={isLoading ? <CircularProgress size={20} color="inherit"/> : <SendIcon />}
               onClick={handleFollowUpSubmit}
-              disabled={!followUpQuestion.trim()}
+              disabled={isLoading || !followUpQuestion.trim()}
+              fullWidth={isMobile} // Make button full width on mobile
+              sx={{ py: {xs: 0.8, sm:1}, fontSize: {xs: '0.8rem', sm: '0.875rem'}, borderRadius: '6px' }}
             >
               Ask Follow-up
             </Button>
