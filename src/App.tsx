@@ -141,7 +141,15 @@ function AppContent() {
         isLoggedIn={!!user}  // Pass authentication state to header
       />
       
-      <Container maxWidth="lg" component="main" sx={{ flexGrow: 1 }}>
+      <Container 
+        maxWidth="lg" 
+        component="main" 
+        sx={{ 
+          flexGrow: 1, 
+          py: { xs: 2, sm: 3 }, // Responsive vertical padding
+          px: { xs: 1, sm: 2, md: 3 }  // Responsive horizontal padding
+        }}
+      >
         <Routes>
           <Route path="/" element={currentTab === 'ask' ? <AskTab showNotification={showNotification} /> : <ExplainTab showNotification={showNotification} />} />
           
