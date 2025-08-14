@@ -11,7 +11,7 @@ import {
   ChatBubbleOutlineOutlined as ChatBubbleOutlineOutlinedIcon, // For empty state
 } from '@mui/icons-material';
 import { SearchResult, Message } from '../types/chatTypes';
-import { processOutputText } from '../utils/textProcessing';
+import { processOutputText } from '../utils/helpers';
 
 interface ResultsDisplayProps {
   isLoading: boolean;

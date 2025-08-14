@@ -3,11 +3,12 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ResultsDisplay from './ResultsDisplay';
 import { Message, SearchResult } from '../types/chatTypes'; // Assuming types are here
-import * as textProcessingUtils from '../utils/textProcessing'; // For mocking processOutputText
+import * as textProcessingUtils from '../utils/helpers'; // For mocking processOutputText
 
-// Mock the processOutputText utility
-jest.mock('../utils/textProcessing', () => ({
-  processOutputText: jest.fn((text) => <>{text}</>), // Simple mock that returns the text
+// Mock the processOutputText utility from the helpers module
+jest.mock('../utils/helpers', () => ({
+  ...jest.requireActual('../utils/helpers'), // Keep original implementations for other helpers
+  processOutputText: jest.fn((text) => <>{text}</>), // Mock just processOutputText
 }));
 
 const mockProcessOutputText = textProcessingUtils.processOutputText as jest.Mock;
