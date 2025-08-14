@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { TextField, Button, Box, Typography, CircularProgress, useTheme } from '@mui/material';
-import { isMobileDevice } from '../utils/isMobileDevice';
+import { isMobileDevice } from '../utils/helpers';
 
 interface InputSectionProps {
   value: string;
