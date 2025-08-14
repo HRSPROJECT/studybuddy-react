@@ -8,6 +8,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import AskTab from './components/AskTab';
 import ExplainTab from './components/ExplainTab';
+import DeepResearchTab from './components/DeepResearchTab';
 import Notification from './components/Notification';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
@@ -151,7 +152,11 @@ function AppContent() {
         }}
       >
         <Routes>
-          <Route path="/" element={currentTab === 'ask' ? <AskTab showNotification={showNotification} /> : <ExplainTab showNotification={showNotification} />} />
+          <Route path="/" element={
+            currentTab === 'ask' ? <AskTab showNotification={showNotification} /> :
+            currentTab === 'explain' ? <ExplainTab showNotification={showNotification} /> :
+            <DeepResearchTab showNotification={showNotification} />
+          } />
           
           {/* Auth Routes */}
           <Route path="/login" element={<Login showNotification={showNotification} />} />
