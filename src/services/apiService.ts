@@ -161,6 +161,42 @@ const apiService = {
       }
       throw new Error(errorMessage);
     }
+  },
+
+  // Perform deep research on a problem
+  performDeepResearch: async (
+    problem: string,
+    onStepUpdate: (step: any) => void
+  ): Promise<void> => {
+    // This is a mock implementation to simulate a streaming response.
+    console.log(`Starting deep research for: "${problem}"`);
+
+    const steps = [
+      { id: '1', question: 'First, what is the core concept of this problem?', answer: null, status: 'thinking' },
+      { id: '2', question: 'What are the benefits of this approach?', answer: null, status: 'pending' },
+      { id: '3', question: 'How can this be implemented?', answer: null, status: 'pending' },
+    ];
+
+    const answers = [
+      'The core concept is to break down a large problem into smaller, manageable sub-problems.',
+      'Benefits include improved accuracy, better handling of complexity, and transparency in the reasoning process.',
+      'Implementation can be done using a recursive or iterative process, often involving multiple calls to a language model with specific prompts for each sub-problem.',
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+      // Announce the step we are thinking about
+      onStepUpdate({ ...steps[i], status: 'thinking' });
+
+      // Simulate network delay and thinking time
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Provide the answer
+      const completedStep = { ...steps[i], answer: answers[i], status: 'complete' };
+      onStepUpdate(completedStep);
+
+      // Update the step in our local array for consistency
+      steps[i] = completedStep;
+    }
   }
 };
 

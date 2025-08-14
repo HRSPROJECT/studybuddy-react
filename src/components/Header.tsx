@@ -4,6 +4,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import SchoolIcon from '@mui/icons-material/School';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import BookIcon from '@mui/icons-material/Book';
+import SearchIcon from '@mui/icons-material/Search';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 interface HeaderProps {
@@ -62,6 +63,15 @@ const Header: React.FC<HeaderProps> = ({ currentTab, handleTabChange, isLoggedIn
               <Box sx={{ display: 'flex', alignItems: 'center', px: isMobile ? 1 : 2 }}> 
                 <BookIcon sx={{ mr: 0.5 }} fontSize={isMobile? "small" : "medium"}/>
                 <span>Explain</span>
+              </Box>
+            }
+          />
+          <Tab
+            value="deep-research"
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', px: isMobile ? 1 : 2 }}>
+                <SearchIcon sx={{ mr: 0.5 }} fontSize={isMobile? "small" : "medium"}/>
+                <span>Deep Research</span>
               </Box>
             }
           />
