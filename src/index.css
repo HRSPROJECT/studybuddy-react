@@ -124,6 +124,11 @@ code.inline-code {
 
 /* Dark mode support for educational content */
 @media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+
   .math-equation, .chemical-formula {
     background-color: rgba(255, 255, 255, 0.1);
     color: #f3f4f6;

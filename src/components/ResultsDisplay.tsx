@@ -120,8 +120,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                   >
                     {msg.type === 'user' ? <PersonIcon fontSize="small" /> : (msg.type === 'ai' ? <AutoAwesomeIcon fontSize="small" /> : <InfoOutlinedIcon fontSize="small" /> )}
                   </Avatar>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="body1" component="div" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  <Box sx={{ flexGrow: 1, maxWidth: 'calc(100% - 48px)' }}>
+                    <Typography variant="body1" component="div">
                       {processOutputText(msg.text)}
                     </Typography>
                     {(msg.imagePreview || msg.imageUrl) && (
